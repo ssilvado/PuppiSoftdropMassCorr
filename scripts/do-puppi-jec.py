@@ -28,6 +28,13 @@ if options.noX: gROOT.SetBatch(True)
 prefix = '/mnt/t3nfs01/data01/shome/thaarres/EXOVVAnalysisRunII/AnalysisOutput/80X/GEN/'
 gStyle.SetOptFit(1)
 
+def get_line(xmin,xmax,ymin,ymax,style):
+   line = TLine(xmin,ymin,xmax,ymax)
+   line.SetLineColor(kRed)
+   line.SetLineStyle(style)
+   line.SetLineWidth(2)
+   return line
+   
 def getCanvas():
   c = TCanvas("c","c",800,800)
   c.GetWindowHeight()
@@ -42,7 +49,7 @@ def get_palette(mode):
  palette['gv'] = [] 
  
  colors = ['#40004b','#762a83','#9970ab','#de77ae','#a6dba0','#5aae61','#1b7837','#00441b','#92c5de','#4393c3','#2166ac','#053061']
- colors = ['#762a83','#de77ae','#a6dba0','#92c5de','#4393c3','#2166ac','#053061']
+ colors = ['#762a83','#de77ae','#a6dba0','#92c5de','#4393c3','#2166ac','#053061','#40004b','#762a83','#9970ab','#de77ae']
 
  for c in colors:
   palette['gv'].append(c)
@@ -53,7 +60,7 @@ palette = get_palette('gv')
 col = TColor()
 
 masses = [1000,1200,1400,1600,1800,2000,2500,3000,4000,4500]  
-masses = [400,600,800,1000,1400,2000,2500,3000,4000,4500] #Ops!! 400 masspoint is named for convenience and is actually SM WW, not signal sample!
+masses = [600,800,1000,1400,2000,2500,3000,4000,4500] #Ops!! 400 masspoint is named for convenience and is actually SM WW, not signal sample!
 
 hCentral = 'gen_SoftdropMass_eta1v3'
 hForward = 'gen_SoftdropMass_etaUP1v3'
@@ -87,8 +94,10 @@ signals = ["BulkWW"]
 for signal in signals:
  
   filelist = []
-  histos = []
+  histosCEN = []
+  histosFOR = []
   fits = []
+  
   l = TLegend(0.4861809,0.7020725,0.6859296,0.9209845)
   if options.fitGenMass or options.doMassShiftFit: l = TLegend(0.6861809,0.7020725,0.7859296,0.9209845)
   l.SetTextSize(0.035)
@@ -120,46 +129,81 @@ for signal in signals:
     print "opening " ,filename
     filelist.append(filetmp)
     masspoints.append(m)
+  i = -1
   for filetmp in filelist:
+    i += 1
     #Central
-    histtmp = TH1F(filetmp.Get(hCentral))
-    histtmp.SetName("Central%s"%filetmp.GetName().replace(".","_"))
-    histtmp.Scale(1./histtmp.Integral())
+    histtmpC = TH1F(filetmp.Get(hCentral))
+    histtmpC.SetName("Central%i"%masspoints[i])
+    # histtmp.Scale(1./histtmp.Integral())
     maxbin=0
     maxcontent=0
     startbin = 60.
-    if options.doMassShiftFit: startbin = -2.
-    for b in range(histtmp.GetXaxis().GetNbins()):
-      if histtmp.GetXaxis().GetBinCenter(b+1) > startbin and histtmp.GetBinContent(b+1)>maxcontent:
+    if options.doMassShiftFit: startbin = -0.4
+    for b in range(histtmpC.GetXaxis().GetNbins()):
+      if histtmpC.GetXaxis().GetBinCenter(b+1) > startbin and histtmpC.GetBinContent(b+1)>maxcontent:
         maxbin = b
-        maxcontent = histtmp.GetBinContent(b+1)   
-    tmpmean = histtmp.GetXaxis().GetBinCenter(maxbin)           
-    g1 = TF1("g1CEN%i"%m,"gaus", tmpmean-10.,tmpmean+15.)
-    if options.doMassShiftFit: g1 = TF1("g1CEN%s"%filetmp.GetName().replace(".","_"),"gaus", tmpmean-0.5,tmpmean+0.5)
-    histtmp.Fit(g1, "SR")
-    histos.append(histtmp)
+        maxcontent = histtmpC.GetBinContent(b+1)   
+    tmpmean = histtmpC.GetXaxis().GetBinCenter(maxbin)  
+    tmpwidth = 15.
+    if options.doMassShiftFit: tmpwidth = 0.8    
+    if options.fitGenMass: tmpwidth = 7.0    
+    g1 = TF1("g1CEN%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpC.Fit(g1, "SR")
+    tmpmean = g1.GetParameter(1)
+    tmpwidth = g1.GetParameter(2)
+    if options.fitGenMass and masspoints[i] >= 3000:
+      tmpwidth = tmpwidth*1.5
+    g1 = TF1("g1CEN%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpC.Fit(g1, "SR")
+    tmpmean = g1.GetParameter(1)
+    tmpwidth = g1.GetParameter(2)
+    if options.fitGenMass and masspoints[i] >= 3000:
+      tmpwidth = tmpwidth*1.5
+    g1 = TF1("g1CEN%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpC.Fit(g1, "SR")
+    print ""
+    histosCEN.append(histtmpC)
     mean    = g1.GetParameter(1)
     meanerr = g1.GetParError(1)
     meansCentral.append(mean)
     meanErrCentral.append(meanerr)
   
     #Forward
-    histtmp = TH1F(filetmp.Get(hForward))
-    histtmp.SetName("Forward%i"%m)
-    histtmp.Scale(1./histtmp.Integral())
+    histtmpF = TH1F(filetmp.Get(hForward))
+    histtmpF.SetName("Forward%i"%masspoints[i])
+    # histtmp.Scale(1./histtmp.Integral())
     maxbin=0
     maxcontent=0
     startbin = 60.
-    if options.doMassShiftFit: startbin = -2.
-    for b in range(histtmp.GetXaxis().GetNbins()):
-      if histtmp.GetXaxis().GetBinCenter(b+1)>startbin and histtmp.GetBinContent(b+1)>maxcontent:
+    if options.doMassShiftFit: startbin = -0.4
+    for b in range(histtmpF.GetXaxis().GetNbins()):
+      if histtmpF.GetXaxis().GetBinCenter(b+1)>startbin and histtmpF.GetBinContent(b+1)>maxcontent:
         maxbin = b
-        maxcontent = histtmp.GetBinContent(b+1)
-    tmpmean = histtmp.GetXaxis().GetBinCenter(maxbin)
-    g1 = TF1("g1FOR%i"%m,"gaus", tmpmean-10.,tmpmean+15.)
-    if options.doMassShiftFit: g1 = TF1("g1CEN%i"%m,"gaus", tmpmean-0.5,tmpmean+0.5)
-    histtmp.Fit(g1, "SR")
-    histos.append(histtmp)
+        maxcontent = histtmpF.GetBinContent(b+1)
+    tmpmean = histtmpF.GetXaxis().GetBinCenter(maxbin)
+    tmpwidth = 15.
+    if options.doMassShiftFit: tmpwidth = 0.8    
+    if options.fitGenMass: tmpwidth = 7.0    
+    g1 = TF1("g1FOR%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpF.Fit(g1, "SR")
+    tmpmean = g1.GetParameter(1)
+    tmpwidth = g1.GetParameter(2)
+    if options.fitGenMass and masspoints[i] >= 3000:
+      tmpwidth = tmpwidth*1.5
+    g1 = TF1("g1FOR%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpF.Fit(g1, "SR")
+    tmpmean = g1.GetParameter(1)
+    tmpwidth = g1.GetParameter(2)
+    if options.fitGenMass and masspoints[i] >= 3000:
+      tmpwidth = tmpwidth*1.5
+    if options.doMassShiftFit and masspoints[i] >= 4000:
+      tmpwidth = tmpwidth*1.5
+    
+    g1 = TF1("g1FOR%i"%masspoints[i],"gaus", tmpmean-tmpwidth,tmpmean+tmpwidth)
+    histtmpF.Fit(g1, "SR");
+    print ""
+    histosFOR.append(histtmpF)
     mean    = g1.GetParameter(1)
     meanerr = g1.GetParError(1)
     meansForward.append(mean)
@@ -172,14 +216,84 @@ for signal in signals:
     ptErrFOR.append(TH1F(filetmp.Get("gen_pt_etaUP1v3")).GetMeanError())
     
   
+  postfix = ""
+  if options.doMassShiftFit: postfix = "_reco"
+  if options.fitGenMass: postfix = "_gen"
+  filename = "prefit_allmassfits%s"%postfix
+  f = TFile("%s.root"%filename,  "RECREATE")
+  print "Writing to file " ,f.GetName()
+  
+  l1= TLegend(0.6861809,0.6520725,0.7859296,0.9209845)
+  l1.SetTextSize(0.035)
+  l1.SetLineColor(0)
+  l1.SetShadowColor(0)
+  l1.SetLineStyle(1)
+  l1.SetLineWidth(1)
+  l1.SetFillColor(0)
+  l1.SetFillStyle(0)
+  l1.SetMargin(0.35)
+
+  for j in xrange(0,len(histosCEN)):
+    histosCEN[j].Write() 
+    histosFOR[j].Write()
+    histosCEN[j].Scale(1./histosCEN[j].Integral())
+    histosFOR[j].Scale(1./histosFOR[j].Integral())
+    histosCEN[j].SetLineColor(col.GetColor(palette[j]))
+    histosCEN[j].SetLineWidth(2)
+    histosCEN[j].Rebin(1) 
+    histosFOR[j].SetLineColor(col.GetColor(palette[j]))
+    histosFOR[j].SetLineWidth(2)
+    histosFOR[j].Rebin(1)
+    l1.AddEntry(histosCEN[j], "M = %i"%masspoints[j],"l")
+    
+  f.Close()  
+
+    
   canv = getCanvas()
   canv.cd()
-  histos[0].Draw("same")
-  histos[0].SetMaximum(histos[0].GetMaximum()*2)
-  for i in range(1, len(histos)):
-   histos[i].Draw("same")
-  canv.Print("JEC_%s_fit.pdf"%hCentral)
-  print signal
+  yTitle = "Arbitrary scale"
+   
+  canv = getCanvas()
+  canv.cd()
+  setmax = histosCEN[0].GetMaximum()*2.0
+  vFrame = canv.DrawFrame(40.,0.000005,120.,setmax)  
+  vFrame.SetXTitle("PUPPI softdrop mass")
+  vFrame.SetYTitle(yTitle)
+  vFrame.GetXaxis().SetTitleSize(0.06)
+  vFrame.GetXaxis().SetTitleOffset(0.95)
+  vFrame.GetXaxis().SetLabelSize(0.05)
+  vFrame.GetYaxis().SetTitleSize(0.06)
+  #vFrame.GetYaxis().SetTitleOffset(1.0)
+  vFrame.GetYaxis().SetLabelSize(0.05)
+  vFrame.GetXaxis().SetNdivisions(408)
+  vFrame.GetYaxis().SetNdivisions(404)
+  for h in histosCEN: h.Draw("HISTsame")
+  l1.Draw("same")
+  li = get_line(80.4,80.4,0.,0.13,1)
+  li.Draw("same")
+  canv.Print("JEC_precorr_massfits_CEN.pdf")
+  
+  canv = getCanvas()
+  canv.cd()
+  setmax = histosFOR[0].GetMaximum()*2.0
+  vFrame = canv.DrawFrame(40.,0.000005,120.,setmax)  
+  vFrame.SetXTitle("PUPPI softdrop mass")
+  vFrame.SetYTitle(yTitle)
+  vFrame.GetXaxis().SetTitleSize(0.06)
+  vFrame.GetXaxis().SetTitleOffset(0.95)
+  vFrame.GetXaxis().SetLabelSize(0.05)
+  vFrame.GetYaxis().SetTitleSize(0.06)
+  #vFrame.GetYaxis().SetTitleOffset(1.0)
+  vFrame.GetYaxis().SetLabelSize(0.05)
+  vFrame.GetXaxis().SetNdivisions(408)
+  vFrame.GetYaxis().SetNdivisions(404)
+  for h in histosFOR: h.Draw("HISTsame")
+  l1.Draw("same")
+  li.Draw("same")
+  canv.Print("JEC_precorr_massfits_FOR.pdf")
+  
+  
+  
   for i in range(0,len(masspoints)):
     print "Central:  Mass = %i  GeV pT = %.2f +/- %.2f GeV" %(masspoints[i], ptsCEN[i],  ptErrCEN[i] )
     print "Central:  Softdrop mass = %.2f +/- %.2f GeV" %(meansCentral[i], meanErrCentral[i] )
@@ -361,25 +475,29 @@ for signal in signals:
     nvyCEN  = np.array(vyCEN)
     nerrCEN = np.array(errCEN)
     if options.fitGenMass:
-      nvyCEN = nvyCEN/80.4
+      nvyCEN = 80.4/nvyCEN
       # nerrCEN = nerrCEN/80.4
       nerrCEN = nvyCEN*0.005 #Try 0.5% error on all points
+      # nerrCEN[0] = nvyCEN[0]*0.1
     elif options.doMassShiftFit:
       nvyCEN  = -1*(nvyCEN - 1)
       # nerrCEN = nerrCEN
       nerrCEN = nvyCEN*0.005 #Try 0.5% error on all points
+      # nerrCEN[0] = nvyCEN[0]*0.1
     nnvyCEN = array("f",nvyCEN)
     nnerrCEN = array("f",nerrCEN)
     
     nvyFOR  = np.array(vyFOR)
     nerrFOR = np.array(errFOR)
     if options.fitGenMass:
-      nvyFOR = nvyFOR/80.4
+      nvyFOR = 80.4/nvyFOR
       # nerrFOR = nerrFOR/80.4
       nerrFOR = nvyFOR*0.005 #Try 0.5% error on all points
+      # nerrFOR[0] = nvyFOR[0]*0.1
     elif options.doMassShiftFit:
       nvyFOR  = -1*(nvyFOR-1)
       nerrFOR = nvyFOR*0.005 #Try 0.5% error on all points
+      # nerrFOR[0] = nvyFOR[0]*0.1
     nnvyFOR = array("f",nvyFOR)
     nnerrFOR = array("f",nerrFOR)
 

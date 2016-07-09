@@ -80,7 +80,7 @@ gC_forCorr.SetMarkerStyle(20)
 gF_forCorr.SetMarkerStyle(20)
 gC_forCorr.SetMarkerColor(col.GetColor(palette[0]))
 gF_forCorr.SetMarkerColor(col.GetColor(palette[1]))
-l = TLegend(0.6461809,0.7620725,0.7859296,0.9009845)
+l = TLegend(0.60461809,0.7620725,0.7559296,0.9009845)
 l.SetTextSize(0.035)
 l.SetLineColor(0)
 l.SetShadowColor(0)
@@ -106,9 +106,9 @@ if not options.calculateRecoJEC:
   # g = TF1("gJEC","pol4",fitmin,fitmax) # "W" Set all weights to 1;ignore error bars "R" Use the Range specified in the function range  "U" Use a User specified fitting algorithm (via SetFCN)  "F" If fitting a polN, switch to minuit fitter
   
   #Fit
-  gC_forCorr.Fit(g, "RU")
-  gC_forCorr.Fit(g, "RU")
-  gC_forCorr.Fit(g, "RU")
+  gC_forCorr.Fit(g, "FRU")
+  gC_forCorr.Fit(g, "FRU")
+  gC_forCorr.Fit(g, "FRU")
   gC_forCorr.Draw("PEsame")
   
   #Write to file
@@ -140,14 +140,14 @@ elif options.calculateRecoJEC:
   g.SetParameter(3, -5.91990e-10)
   g.SetParameter(4,  1.61996e-13)
   g.SetParameter(5, -1.64570e-16)
+  g.SetParameter(6,  -1.55572e-17)
 
   
   print "Fitting for central region" 
-  gC_forCorr.Fit(g, "FRU")
-  gC_forCorr.Fit(g, "FRU")
-  gC_forCorr.Fit(g, "FRU")
-  gC_forCorr.Fit(g, "FRU")
-  gC_forCorr.Fit(g, "FRU")
+  gC_forCorr.Fit(g, "EX0FRU")
+  gC_forCorr.Fit(g, "EX0FRU")
+  gC_forCorr.Fit(g, "EX0FRU")
+  gC_forCorr.Fit(g, "EX0FRU")
   gC_forCorr.Draw("PEsame") 
   
   print "" ; print "" ; print "" ;
@@ -163,11 +163,15 @@ elif options.calculateRecoJEC:
   g2.SetParameter(2,  2.16362e-06)
   g2.SetParameter(3, -1.66125e-09)
   g2.SetParameter(4,  4.81044e-13)
+  g2.SetParameter(5, -2.33647e-13)
+  g2.SetParameter(6, -2.41196e-17)
 
   print "Fitting for forward region" 
-  gF_forCorr.Fit(g2, "FRU")
-  gF_forCorr.Fit(g2, "FRU")
-  gF_forCorr.Fit(g2, "FRU")
+  gF_forCorr.Fit(g2, "EX0FRU")
+  gF_forCorr.Fit(g2, "EX0FRU")
+  gF_forCorr.Fit(g2, "EX0FRU")
+  gF_forCorr.Fit(g2, "EX0FRU")
+
   gF_forCorr.Draw("PEsame")
 
 
