@@ -58,7 +58,7 @@ canv = getCanvas()
 canv.cd()
 canv.SetName("fitGEN")
 vFrame = canv.DrawFrame(200,0.95,3100,1.1)
-vFrame.SetYTitle("m_{gen} / m_{PDG}")
+vFrame.SetYTitle("m_{PDG} / m_{gen}")
 if options.calculateRecoJEC: 
   canv.SetName("fitRECO")
   vFrame = canv.DrawFrame(200,1.0,3100,1.4)
