@@ -11,7 +11,7 @@ CMS_lumi.lumi_13TeV = ""
 CMS_lumi.writeExtraText = 1
 CMS_lumi.extraText = "Simulation Preliminary"
 CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
-iPos = 0
+iPos = 11
 if( iPos==0 ): CMS_lumi.relPosX = 0.12
 iPeriod=4
 
@@ -25,7 +25,7 @@ parser.add_option('--fitGen', action='store_true', dest='fitGenMass', default=Fa
 
 if options.noX: gROOT.SetBatch(True)
 
-prefix = '/mnt/t3nfs01/data01/shome/thaarres/EXOVVAnalysisRunII/AnalysisOutput/80X/GEN/'
+prefix = '/mnt/t3nfs01/data01/shome/thaarres/EXOVVAnalysisRunII/AnalysisOutput/80X/'
 gStyle.SetOptFit(1)
 
 def get_line(xmin,xmax,ymin,ymax,style):
@@ -50,6 +50,7 @@ def get_palette(mode):
  
  colors = ['#40004b','#762a83','#9970ab','#de77ae','#a6dba0','#5aae61','#1b7837','#00441b','#92c5de','#4393c3','#2166ac','#053061']
  colors = ['#762a83','#de77ae','#a6dba0','#92c5de','#4393c3','#2166ac','#053061','#40004b','#762a83','#9970ab','#de77ae']
+ colors = ['#FF420E','#80BD9E','#a6dba0','#92c5de','#4393c3','#2166ac','#053061','#40004b','#762a83','#9970ab','#de77ae''#40004b','#762a83','#9970ab']
 
  for c in colors:
   palette['gv'].append(c)
@@ -60,8 +61,10 @@ palette = get_palette('gv')
 col = TColor()
 
 masses = [1000,1200,1400,1600,1800,2000,2500,3000,4000,4500]  
-masses = [600,800,1000,1400,2000,2500,3000,4000,4500] #Ops!! 400 masspoint is named for convenience and is actually SM WW, not signal sample!
-
+masses = [600,800,1000,1200,1400,1800,2000,3000,4000,4500] #Ops!! 400 masspoint is named for convenience and is actually SM WW, not signal sample!
+if options.fitGenMass:
+  masses = [400,600,800,1000,1200,1400,1800,2500,3000,4000,4500]
+  
 hCentral = 'gen_SoftdropMass_eta1v3'
 hForward = 'gen_SoftdropMass_etaUP1v3'
 
@@ -98,8 +101,8 @@ for signal in signals:
   histosFOR = []
   fits = []
   
-  l = TLegend(0.4861809,0.7020725,0.6859296,0.9209845)
-  if options.fitGenMass or options.doMassShiftFit: l = TLegend(0.6861809,0.7020725,0.7859296,0.9209845)
+  l = TLegend(0.7650754,0.7564767,0.8065327,0.876943)
+  if options.fitGenMass or options.doMassShiftFit: l = TLegend(0.7650754,0.7564767,0.8065327,0.876943)
   l.SetTextSize(0.035)
   l.SetLineColor(0)
   l.SetShadowColor(0)
@@ -122,6 +125,14 @@ for signal in signals:
   ptsFOR = []
   ptErrFOR = []
   masspoints = []
+  
+  # if options.fitGenMass:
+  #   meansCentral.append(82.20)
+  #   meanErrCentral.append(0.06)
+  #   ptsCEN.append(200)
+  #   ptErrCEN.append(0.73)
+    
+  
   for m in masses:
     filename = prefix + 'ExoDiBosonAnalysis.' + signal + '_13TeV_' + "%s"%m + 'GeV.VV.root'
     filetmp = TFile.Open(filename,"READ")
@@ -216,14 +227,14 @@ for signal in signals:
     ptErrFOR.append(TH1F(filetmp.Get("gen_pt_etaUP1v3")).GetMeanError())
     
   
-  postfix = ""
-  if options.doMassShiftFit: postfix = "_reco"
-  if options.fitGenMass: postfix = "_gen"
-  filename = "prefit_allmassfits%s"%postfix
+  postfix = "_recoMass"
+  if options.doMassShiftFit: postfix = "_masshift"
+  if options.fitGenMass: postfix = "_genMass"
+  filename = "AllFits%s"%postfix
   f = TFile("%s.root"%filename,  "RECREATE")
   print "Writing to file " ,f.GetName()
   
-  l1= TLegend(0.6861809,0.6520725,0.7859296,0.9209845)
+  l1= TLegend(0.7650754,0.5564767,0.8065327,0.876943)
   l1.SetTextSize(0.035)
   l1.SetLineColor(0)
   l1.SetShadowColor(0)
@@ -256,7 +267,7 @@ for signal in signals:
   canv = getCanvas()
   canv.cd()
   setmax = histosCEN[0].GetMaximum()*2.0
-  vFrame = canv.DrawFrame(40.,0.000005,120.,setmax)  
+  vFrame = canv.DrawFrame(20.,0.000005,140.,setmax)  
   vFrame.SetXTitle("PUPPI softdrop mass")
   vFrame.SetYTitle(yTitle)
   vFrame.GetXaxis().SetTitleSize(0.06)
@@ -267,11 +278,17 @@ for signal in signals:
   vFrame.GetYaxis().SetLabelSize(0.05)
   vFrame.GetXaxis().SetNdivisions(408)
   vFrame.GetYaxis().SetNdivisions(404)
-  for h in histosCEN: h.Draw("HISTsame")
+  for h in histosCEN: 
+    h.Draw("HISTsame")
   l1.Draw("same")
   li = get_line(80.4,80.4,0.,0.13,1)
   li.Draw("same")
-  canv.Print("JEC_precorr_massfits_CEN.pdf")
+  
+  canvname = "RecoPuppiSoftdropMass"
+  if options.doMassShiftFit: canvname = "MassShift"
+  if options.doPruning: canvname = "recoPrunedMass"
+  if options.fitGenMass: canvname = "GenSoftdropMass"
+  canv.Print(canvname+"_CEN.pdf")
   
   canv = getCanvas()
   canv.cd()
@@ -290,7 +307,8 @@ for signal in signals:
   for h in histosFOR: h.Draw("HISTsame")
   l1.Draw("same")
   li.Draw("same")
-  canv.Print("JEC_precorr_massfits_FOR.pdf")
+  canv.Print(canvname+"_FOR.pdf")
+  del canv
   
   
   
@@ -319,17 +337,17 @@ for signal in signals:
 
   canv = getCanvas()
   canv.cd()
-  if not options.fitGenMass and not options.doMassShiftFit:
-    canv.Divide(1,2,0,0,0)
-    canv.cd(1)
-    p11_1 = canv.GetPad(1)
-    p11_1.SetPad(0.01,0.20,0.99,0.98)
-    p11_1.SetRightMargin(0.05)
-    p11_1.SetTopMargin(0.05)
-    p11_1.SetFillColor(0)
-    p11_1.SetBorderMode(0)
-    p11_1.SetFrameFillStyle(0)
-    p11_1.SetFrameBorderMode(0)
+  # if not options.fitGenMass and not options.doMassShiftFit:
+ #    canv.Divide(1,2,0,0,0)
+ #    canv.cd(1)
+ #    p11_1 = canv.GetPad(1)
+ #    p11_1.SetPad(0.01,0.20,0.99,0.98)
+ #    p11_1.SetRightMargin(0.05)
+ #    p11_1.SetTopMargin(0.05)
+ #    p11_1.SetFillColor(0)
+ #    p11_1.SetBorderMode(0)
+ #    p11_1.SetFrameFillStyle(0)
+ #    p11_1.SetFrameBorderMode(0)
   vFrame = canv.DrawFrame(200,65.,2200,85.)
   vFrame.SetYTitle("<m>_{m_{reco}} (GeV)")
   if options.fitGenMass:
@@ -354,7 +372,7 @@ for signal in signals:
   gFOR.SetMarkerStyle(20)
   gCEN.SetMarkerColor(col.GetColor(palette[0]))
   gFOR.SetMarkerColor(col.GetColor(palette[1]))
-  filetmp = TFile.Open("/mnt/t3nfs01/data01/shome/thaarres/EXOVVAnalysisRunII/AnalysisOutput/80X/ExoDiBosonAnalysis.W_all.root","READ")
+  filetmp = TFile.Open("/mnt/t3nfs01/data01/shome/thaarres/EXOVVAnalysisRunII/AnalysisOutput/76X/ExoDiBosonAnalysis.BulkWW_13TeV_2000GeV.VV.root","READ")
   histtmpCEN = TProfile(filetmp.Get("gen_chsJEC_eta1v3"))
   histtmpFOR = TProfile(filetmp.Get("gen_chsJEC_etaUP1v3"))
   histtmpCEN.SetMarkerSize(1.6)
@@ -375,69 +393,86 @@ for signal in signals:
   gFOR.Draw("PLsame")
   l.AddEntry(gCEN, "|#eta|<1.3","p")
   l.AddEntry(gFOR, "|#eta|>1.3","p")
-
-  l1 = TLatex()
-  l1.SetNDC()
-  l1.SetTextAlign(12)
-  l1.SetTextFont(42)
-  l1.SetTextSize(0.035)
-  l1.DrawLatex(0.20,0.86, "AK, R= 0.8")
-  l1.DrawLatex(0.20,0.82, "No L2L3")
-  l1.DrawLatex(0.20,0.78, "p_{T} > 200 GeV, |#eta| < 2.5")
-  l1.SetTextSize(0.045)
+  
+  addInfo = TPaveText(0.571608,0.5103627,0.7336683,0.7189119,"NDC")
+  if options.fitGenMass or options.doMassShiftFit: addInfo = TPaveText(0.1959799,0.1632124,0.3580402,0.3717617,"NDC")
   if not options.fitGenMass:
     if options.doPruning: 
-      l1.DrawLatex(0.20,0.91, "Pruned mass")
+       addInfo.AddText("Pruned mass")
     else:
-      l1.DrawLatex(0.20,0.91, "PUPPI softdrop mass")  
+       addInfo.AddText("PUPPI softdrop mass")  
   else:    
     if options.doPruning:  
-      l1.DrawLatex(0.20,0.91, "Gen pruned mass") 
+       addInfo.AddText("Gen pruned mass") 
     else:
-      l1.DrawLatex(0.20,0.91, "Gen softdrop mass") 
-  # if signal.find("BulkWW") != -1: l1.DrawLatex(0.20,0.91, " Bulk G #rightarrow WW")
-#   elif signal.find("BulkZZ") != -1: l1.DrawLatex(0.20,0.91, " Bulk G #rightarrow ZZ")
-#   elif signal.find("WprimeWZ") != -1: l1.DrawLatex(0.20,0.91, " W'#rightarrow WZ")
-#   elif signal.find("ZprimeWW") != -1: l1.DrawLatex(0.20,0.91, " Z' #rightarrow WW")
+       addInfo.AddText("Gen softdrop mass")
+  if not options.fitGenMass:
+    if signal.find("BulkWW") != -1: addInfo.AddText("Bulk G #rightarrow WW")
+    elif signal.find("BulkZZ") != -1: addInfo.AddText("Bulk G #rightarrow ZZ")
+    elif signal.find("WprimeWZ") != -1: addInfo.AddText("W'#rightarrow WZ")
+    elif signal.find("ZprimeWW") != -1: addInfo.AddText("Z' #rightarrow WW")     
+  addInfo.SetFillColor(0)
+  addInfo.SetLineColor(0)
+  addInfo.SetFillStyle(0)
+  addInfo.SetBorderSize(0)
+  addInfo.SetTextFont(42)
+  addInfo.SetTextSize(0.040)
+  addInfo.SetTextAlign(12)
+  addInfo.AddText("AK, R= 0.8")
+  addInfo.AddText("Uncorrected")
+  addInfo.AddText("p_{T} > 200 GeV, |#eta| < 2.5")
+  
   
   l.Draw("same")
-  # l2.Draw("same")
-  if not options.fitGenMass and not options.doMassShiftFit: CMS_lumi.CMS_lumi(p11_1, iPeriod, iPos)
-  else: CMS_lumi.CMS_lumi(canv, iPeriod, iPos)
+  addInfo.Draw("same")
+  # if not options.fitGenMass and not options.doMassShiftFit: CMS_lumi.CMS_lumi(p11_1, iPeriod, iPos)
+  # else: CMS_lumi.CMS_lumi(canv, iPeriod, iPos)
+  CMS_lumi.CMS_lumi(canv, iPeriod, iPos)
   canv.Update()
   
-  if not options.fitGenMass and not options.doMassShiftFit:
-    canv.cd(2)
-    p11_2 = canv.GetPad(2)
-    p11_2.SetPad(0.01,0.02,0.99,0.27)
-    p11_2.SetBottomMargin(0.35)
-    p11_2.SetRightMargin(0.05)
-    p11_2.SetGridx()
-    p11_2.SetGridy()
-    vFrame2 = p11_2.DrawFrame(p11_1.GetUxmin(),1.04, p11_1.GetUxmax(), 1.09)
-    vFrame2.SetXTitle("p_{T} (GeV)")
-    vFrame2.SetYTitle("CHS L2L3")
-    vFrame2.GetXaxis().SetTitleSize(0.06)
-    vFrame2.GetYaxis().SetTitleSize(0.15)
-    vFrame2.GetYaxis().SetTitleOffset(0.40)
-    vFrame2.GetYaxis().SetLabelSize(0.09)
-    vFrame2.GetXaxis().SetTitleSize(0.15)
-    # vFrame2.GetXaxis().SetTitleOffset(0.90)
-    vFrame2.GetXaxis().SetLabelSize(0.12)
-    vFrame2.GetXaxis().SetNdivisions(809)
-    vFrame2.GetYaxis().SetNdivisions(403)
+  # if not options.fitGenMass and not options.doMassShiftFit:
+  #   canv.cd(2)
+  #   p11_2 = canv.GetPad(2)
+  #   p11_2.SetPad(0.01,0.02,0.99,0.27)
+  #   p11_2.SetBottomMargin(0.35)
+  #   p11_2.SetRightMargin(0.05)
+  #   p11_2.SetGridx()
+  #   p11_2.SetGridy()
+  #   vFrame2 = p11_2.DrawFrame(p11_1.GetUxmin(),1.04, p11_1.GetUxmax(), 1.09)
+  #   vFrame2.SetXTitle("p_{T} (GeV)")
+  #   vFrame2.SetYTitle("CHS L2L3")
+  #   vFrame2.GetXaxis().SetTitleSize(0.06)
+  #   vFrame2.GetYaxis().SetTitleSize(0.15)
+  #   vFrame2.GetYaxis().SetTitleOffset(0.40)
+  #   vFrame2.GetYaxis().SetLabelSize(0.09)
+  #   vFrame2.GetXaxis().SetTitleSize(0.15)
+  #   # vFrame2.GetXaxis().SetTitleOffset(0.90)
+  #   vFrame2.GetXaxis().SetLabelSize(0.12)
+  #   vFrame2.GetXaxis().SetNdivisions(809)
+  #   vFrame2.GetYaxis().SetNdivisions(403)
   
   
   
   histtmpCEN.Draw("same")
   histtmpFOR.Draw("same")
   canv.Update()
-  canvname = "JEC_%s_vspt.pdf"%(hCentral)
+  canvname = "RecoPuppiSoftdropMass_vspt.pdf"
+  if options.doMassShiftFit: canvname = "MassShift_vspt.pdf"
+  if options.doPruning: canvname = "recoPrunedMass_vspt.pdf"
+  if options.fitGenMass: canvname = "GenSoftdropMass_vspt.pdf"
   canv.SaveAs(canvname,"pdf")
   canv.SaveAs(canvname.replace("pdf","root"),"pdf")
   
   
   if options.fitGenMass or options.doMassShiftFit:
+    # vyCEN.append(vyCEN[0])
+    # errCEN.append(errCEN[0])
+    # vyFOR.append(vyFOR[0])
+    # errFOR.append(errFOR[0])
+    # vxCEN.append(200.)
+    # vxErrCEN.append(vxErrCEN[0])
+    # vxFOR.append(200.)
+    # vxErrFOR.append(vxErrFOR[0])
     
     vyCEN.append(vyCEN[-1])
     errCEN.append(errCEN[-1])  
@@ -512,6 +547,5 @@ for signal in signals:
     gC_forCorr.Write()
     gF_forCorr.Write()
     f.Close()
-
-    
   time.sleep(105)
+  del canv

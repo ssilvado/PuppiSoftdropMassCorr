@@ -11,7 +11,7 @@ CMS_lumi.lumi_13TeV = ""
 CMS_lumi.writeExtraText = 1
 CMS_lumi.extraText = "Simulation Preliminary"
 CMS_lumi.lumi_sqrtS = "13 TeV" # used with iPeriod = 0, e.g. for simulation-only plots (default is an empty string)
-iPos = 0
+iPos = 11
 if( iPos==0 ): CMS_lumi.relPosX = 0.12
 iPeriod=4
 
@@ -38,6 +38,7 @@ def get_palette(mode):
  palette['gv'] = [] 
  colors = ['#40004b','#762a83','#9970ab','#de77ae','#a6dba0','#5aae61','#1b7837','#00441b','#92c5de','#4393c3','#2166ac','#053061']
  colors = ['#762a83','#de77ae','#a6dba0','#92c5de','#4393c3','#2166ac','#053061']
+ colors = ['#FF420E','#80BD9E','#a6dba0','#92c5de','#4393c3','#2166ac','#053061','#40004b','#762a83','#9970ab','#de77ae']
  for c in colors:
   palette['gv'].append(c)
  return palette[mode]
@@ -80,6 +81,8 @@ gC_forCorr.SetMarkerStyle(20)
 gF_forCorr.SetMarkerStyle(20)
 gC_forCorr.SetMarkerColor(col.GetColor(palette[0]))
 gF_forCorr.SetMarkerColor(col.GetColor(palette[1]))
+gC_forCorr.SetLineColor(col.GetColor(palette[0]))
+gF_forCorr.SetLineColor(col.GetColor(palette[1]))
 l = TLegend(0.60461809,0.7620725,0.7559296,0.9009845)
 l.SetTextSize(0.035)
 l.SetLineColor(0)
@@ -96,12 +99,14 @@ fitmax = TMath.MaxElement(gC_forCorr.GetN(),gC_forCorr.GetX())
 print "Fitting range: [%.2f,%.2f] "%(fitmin,fitmax)
 
 if not options.calculateRecoJEC: 
-  l.AddEntry(gC_forCorr, "GEN correction","p")
+  l.AddEntry(gC_forCorr, "Gen correction","p")
   g = TF1("puppiJECcorr_gen","[0]+[1]*pow(x*[2],-[3])",fitmin,fitmax)
-  g.SetParameter(0, 9.92693e-01)
-  g.SetParameter(1, 1.92227e+00)
-  g.SetParameter(2, 2.68157e-02)
-  g.SetParameter(3, 1.73978e+00)
+  g.SetParameter(0,  0.97)
+  g.SetParameter(1, -3.51252e+00)
+  # g.SetParameter(2,  2.76144e-02)
+  g.SetParameter(2,  0.04)
+  g.SetParLimits(2,  0.06,0.08)
+  g.SetParameter(3,  2.27721e+00)
   # g.SetParameter(4, 1.04)
   # g = TF1("gJEC","pol4",fitmin,fitmax) # "W" Set all weights to 1;ignore error bars "R" Use the Range specified in the function range  "U" Use a User specified fitting algorithm (via SetFCN)  "F" If fitting a polN, switch to minuit fitter
   
@@ -113,7 +118,7 @@ if not options.calculateRecoJEC:
   
   #Write to file
   jecCorr_gen = gC_forCorr.GetFunction("puppiJECcorr_gen")
-  filename = "weights/puppiJecCorr"
+  filename = "weights/puppiCorr"
   f = TFile("%s.root"%filename,  "UPDATE")
   print "Writing to file " ,f.GetName()
   jecCorr_gen.Write("",TObject.kOverwrite)
@@ -121,10 +126,11 @@ if not options.calculateRecoJEC:
   f.Close()  
   
 elif options.calculateRecoJEC:
-  l.AddEntry(gF_forCorr, "RECO corr. |#eta| > 1.3","p")
-  l.AddEntry(gC_forCorr, "RECO corr. |#eta| #leq 1.3","p")
+  l.AddEntry(gF_forCorr, "Reco corr. |#eta| > 1.3","p")
+  l.AddEntry(gC_forCorr, "Reco corr. |#eta| #leq 1.3","p")
 
   g = TF1("puppiJECcorr_reco_0eta1v3","[0]+[1]*x+[2]*pow(x,2)+[3]*pow(x,3)+[4]*pow(x,4)+[5]*pow(x,5)",fitmin,fitmax)
+  # g = TF1("puppiJECcorr_reco_0eta1v3","[0]+[1]*x+[2]*pow(x,2)+[3]*pow(x,3)+[4]*pow(x,4)",fitmin,fitmax)
   
   # g = TF1("gJEC","pol4",fitmin,fitmax)
   # g.SetParameter(0,      1.21228)
@@ -134,20 +140,24 @@ elif options.calculateRecoJEC:
  #  g.SetParameter(4,   1.1131e-13)
  #  g.SetParameter(5, -1.95118e-17)
   
-  g.SetParameter(0,  1.31774e+00)
-  g.SetParameter(1, -6.86314e-04)
-  g.SetParameter(2,  9.75556e-07)
-  g.SetParameter(3, -5.91990e-10)
-  g.SetParameter(4,  1.61996e-13)
-  g.SetParameter(5, -1.64570e-16)
-  g.SetParameter(6,  -1.55572e-17)
+  g.SetParameter(0, 9.95307e-01)
+  g.SetParameter(1, 1.98033e-04)
+  g.SetParameter(2,-1.42701e-07)
+  g.SetParameter(3, 4.20355e-11)
+  g.SetParameter(4,-4.37768e-15)
+
+#
+#
+#
+#
+#   g.SetParameter(5, -1.64570e-16)
+#   g.SetParameter(6,  -1.55572e-17)
 
   
   print "Fitting for central region" 
-  gC_forCorr.Fit(g, "EX0FRU")
-  gC_forCorr.Fit(g, "EX0FRU")
-  gC_forCorr.Fit(g, "EX0FRU")
-  gC_forCorr.Fit(g, "EX0FRU")
+  for i in range(0,10):
+    gC_forCorr.Fit(g, "EX0FRU")
+ 
   gC_forCorr.Draw("PEsame") 
   
   print "" ; print "" ; print "" ;
@@ -158,19 +168,24 @@ elif options.calculateRecoJEC:
   
   # g2 = TF1("gJEC2","pol3",fitmin,fitmax)
   g2 = TF1("puppiJECcorr_reco_1v3eta2v5","[0]+[1]*x+[2]*pow(x,2)+[3]*pow(x,3)+[4]*pow(x,4)+[5]*pow(x,5)",fitmin,fitmax)
-  g2.SetParameter(0,  1.40318e+00)
-  g2.SetParameter(1, -1.22826e-03)
-  g2.SetParameter(2,  2.16362e-06)
-  g2.SetParameter(3, -1.66125e-09)
-  g2.SetParameter(4,  4.81044e-13)
-  g2.SetParameter(5, -2.33647e-13)
-  g2.SetParameter(6, -2.41196e-17)
+  # g2 = TF1("puppiJECcorr_reco_1v3eta2v5","[0]+[1]*x+[2]*pow(x,2)+[3]*pow(x,3)+[4]*pow(x,4)",fitmin,fitmax)
+  # g2.SetParameter(0,  1.40318e+00)
+  # g2.SetParameter(1, -1.22826e-03)
+  # g2.SetParameter(2,  2.16362e-06)
+  # g2.SetParameter(3, -1.66125e-09)
+  # g2.SetParameter(4,  4.81044e-13)
+  # g2.SetParameter(5, -2.33647e-13)
+  # g2.SetParameter(6, -2.41196e-17)
+  g2.SetParameter(0, 1.10752e+00)
+  g2.SetParameter(1,-1.86182e-05)
+  g2.SetParameter(2, 9.31589e-08)
+  g2.SetParameter(3,-5.17814e-11)
+  g2.SetParameter(4, 8.12939e-15)
 
   print "Fitting for forward region" 
-  gF_forCorr.Fit(g2, "EX0FRU")
-  gF_forCorr.Fit(g2, "EX0FRU")
-  gF_forCorr.Fit(g2, "EX0FRU")
-  gF_forCorr.Fit(g2, "EX0FRU")
+  for i in range(0,10):
+    gF_forCorr.Fit(g2, "EX0FRU")
+
 
   gF_forCorr.Draw("PEsame")
 
@@ -182,7 +197,7 @@ elif options.calculateRecoJEC:
   jecCorr_reco_central = gC_forCorr.GetFunction("puppiJECcorr_reco_0eta1v3")
   jecCorr_reco_forward = gF_forCorr.GetFunction("puppiJECcorr_reco_1v3eta2v5")
 
-  filename = "weights/puppiJecCorr"
+  filename = "weights/puppiCorr"
   f = TFile("%s.root"%filename,  "UPDATE")
   print "Writing to file " ,f.GetName()
   jecCorr_reco_central.Write("",TObject.kOverwrite)
@@ -199,7 +214,7 @@ CMS_lumi.CMS_lumi(canv, iPeriod, iPos)
 canv.Update()
 postfix = "gen"
 if options.calculateRecoJEC: postfix = "reco"
-canvname = "JEC_fit_%s.pdf"%(postfix)
+canvname = "JMC_fit_%s.pdf"%(postfix)
 canv.SaveAs(canvname,"pdf")
 canv.SaveAs(canvname.replace("pdf","root"),"pdf")
 time.sleep(205)
