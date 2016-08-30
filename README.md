@@ -1,14 +1,17 @@
 # PUPPI Softdrop Mass Corrections
 Scripts and weights for correcting PUPPI softdrop mass
 
-Get uncorrected PUPPI soft drop mass from MINIAOD:
+## Get uncorrected PUPPI soft drop mass from MINIAOD:
+```
 TLorentzVector puppi_softdrop, puppi_softdrop_subjet;
         auto const & sdSubjetsPuppi = jet.subjets("SoftDropPuppi");
         for ( auto const & it : sdSubjetsPuppi ) {
           puppi_softdrop_subjet.SetPtEtaPhiM(it->correctedP4(0).pt(),it->correctedP4(0).eta(),it->correctedP4(0).phi(),it->correctedP4(0).mass());
           puppi_softdrop+=puppi_softdrop_subjet;
         }
-Get PUPPI soft drop mass correction:
+```
+## Get PUPPI soft drop mass correction:
+```
 float puppiCorr = getPUPPIweight( (data_.jetAK8_puppi_pt).at(j) , (data_.jetAK8_puppi_eta).at(j) );
 float jetmass = (*data_.jetAK8_puppi_softdrop_massUnCorr)[j]*puppiCorr;
 
@@ -33,3 +36,4 @@ float ExoDiBosonAnalysis::getPUPPIweight(float puppipt, float puppieta ){
 
   return totalWeight;
 }
+```
