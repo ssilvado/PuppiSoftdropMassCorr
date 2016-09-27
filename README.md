@@ -20,7 +20,7 @@ float ExoDiBosonAnalysis::getPUPPIweight(float puppipt, float puppieta ){
  TFile* file = TFile::Open( "weights/puppiJecCorr.root","READ");
   puppisd_corrGEN      = (TF1*)file->Get("puppiJECcorr_gen");
   puppisd_corrRECO_cen = (TF1*)file->Get("puppiJECcorr_reco_0eta1v3");
-  puppisd_corrRECO_for = (TF1*)file->Get("puppiJECcorr_reco_1v3eta2v5”);
+  puppisd_corrRECO_for = (TF1*)file->Get("puppiJECcorr_reco_1v3eta2v5");
 
 
   float genCorr  = 1.;
