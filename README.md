@@ -13,7 +13,7 @@ TLorentzVector puppi_softdrop, puppi_softdrop_subjet;
 ```
 
 ## Get PUPPI soft drop mass correction:
-To compute the weights, the AK8 PUPPI jet pt and eta (L2L3 corrected, as default in MINIAOD) must be passed. In the example below, these are called "AK8PUPPIjetPt" and "AK8PUPPIjetEta" respectively. The returned weight is then applied to the uncorrected PUPPI softdrop mass, which can be obtained following the example above ("Get uncorrected PUPPI soft drop mass from MINIAOD").
+To compute the weights the AK8 PUPPI jet pt and eta must be passed, where the PUPPI jet pT should be corrected with the newest L2L3(L2L3+L2L3res) JEC corrections available for MC(data) In the example below, these are called "AK8PUPPIjetPt" and "AK8PUPPIjetEta" respectively. The returned weight is then applied to the uncorrected PUPPI softdrop mass, which can be obtained following the example above ("Get uncorrected PUPPI soft drop mass from MINIAOD").
 ```
 float puppiCorr = getPUPPIweight( AK8PUPPIjetPt , AK8PUPPIjetEta );
 float jetmass = AK8PUPPISoftdropUncorrectedMass*puppiCorr;
